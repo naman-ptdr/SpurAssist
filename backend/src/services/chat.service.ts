@@ -3,6 +3,7 @@ import { generateReply, ChatMessage } from "./llm.service";
 import { Role } from "@prisma/client";
 
 const MAX_HISTORY = 10;
+const MIN_INTERVAL_MS = 3000; // 1 message / 3 seconds per session
 
 export async function handleChat(
   message: string,
@@ -20,6 +21,24 @@ export async function handleChat(
     if (!session) {
       session = await prisma.session.create({ data: {} });
     }
+
+    /* SESSION-BASED RATE LIMITING */
+    const now = Date.now();
+    if (
+      session.lastMessageAt &&
+      now - session.lastMessageAt.getTime() < MIN_INTERVAL_MS
+    ) {
+      return {
+        reply: "Please wait a moment before sending another message.",
+        sessionId: session.id,
+      };
+    }
+
+    /* UPDATE LAST MESSAGE TIME */
+    await prisma.session.update({
+      where: { id: session.id },
+      data: { lastMessageAt: new Date() },
+    });
 
     /* SAVE USER MESSAGE */
     await prisma.message.create({

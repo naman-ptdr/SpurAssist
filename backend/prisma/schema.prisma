@@ -15,10 +15,12 @@ enum Role {
 }
 
 model Session {
-  id        String    @id @default(uuid())
-  createdAt DateTime  @default(now())
-  messages  Message[]
+  id             String    @id @default(uuid())
+  createdAt      DateTime  @default(now())
+  lastMessageAt  DateTime?
+  messages       Message[]
 }
+
 
 model Message {
   id        String   @id @default(uuid())
