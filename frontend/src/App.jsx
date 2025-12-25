@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import "./App.css";
 
-const API_URL = "http://localhost:4000/api/chat/message";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 export default function App() {
   const [messages, setMessages] = useState([]);
@@ -28,25 +28,39 @@ export default function App() {
     };
 
     try {
-      const res = await fetch(API_URL, {
+      const res = await fetch(`${API_BASE}/chat/message`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       const data = await res.json();
+
+      // handle backend errors gracefully
+      if (!res.ok) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: data.reply || "Something went wrong. Please try again.",
+          },
+        ]);
+        return;
+      }
+
       localStorage.setItem("sessionId", data.sessionId);
 
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: data.reply },
       ]);
-    } catch {
+    } catch (err) {
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: "Something went wrong. Please try again.",
+          content:
+            "Our support system is temporarily unavailable. Please try again shortly.",
         },
       ]);
     } finally {
