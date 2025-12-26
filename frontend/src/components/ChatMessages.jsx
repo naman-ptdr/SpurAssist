@@ -9,7 +9,7 @@ export default function ChatMessages({ messages, isTyping }) {
   }, [messages, isTyping]);
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-gray-50">
+    <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-gray-50 min-h-0">
       {messages.map((msg) => (
         <MessageBubble key={msg.id} role={msg.role} content={msg.content} />
       ))}

@@ -18,7 +18,7 @@ export default function ChatWindow({
         transition={{ duration: 0.25, ease: "easeOut" }}
         className="fixed bottom-8 right-8 z-50"
       >
-        <div className="w-[380px] h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col">
+        <div className="w-[380px] max-h-[min(80vh,600px)] bg-white rounded-2xl shadow-2xl flex flex-col">
           <ChatHeader onClose={onClose} />
           <ChatMessages messages={messages} isTyping={isTyping} />
           <ChatInput onSendMessage={onSendMessage} disabled={isTyping} />

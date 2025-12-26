@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import LandingPage from "./components/LandingPage";
 import ChatFAB from "./components/ChatFAB";
 import ChatWindow from "./components/ChatWindow";
@@ -7,7 +7,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 /**
  * Unified message shape for UI
- * role: "user" | "bot" | "agent" | "system"
+ * role: "user" | "bot" | "system"
  */
 const INITIAL_MESSAGES = [
   {
@@ -19,8 +19,48 @@ const INITIAL_MESSAGES = [
 
 function App() {
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [messages, setMessages] = useState(INITIAL_MESSAGES);
+  const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
+
+  useEffect(() => {
+    async function restoreChatSession() {
+      const sessionId = localStorage.getItem("sessionId");
+
+      // No session → show greeting
+      if (!sessionId) {
+        setMessages(INITIAL_MESSAGES);
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/chat/session/${sessionId}`);
+
+        if (!res.ok) {
+          throw new Error("Session not found");
+        }
+
+        const data = await res.json();
+
+        // Map backend roles → frontend roles
+        const hydratedMessages = data.messages.map((msg) => ({
+          id: crypto.randomUUID(),
+          role: msg.role === "assistant" ? "bot" : "user",
+          content: msg.content,
+        }));
+
+        // If session exists but empty, still greet
+        setMessages(
+          hydratedMessages.length > 0 ? hydratedMessages : INITIAL_MESSAGES
+        );
+      } catch (err) {
+        // Invalid session → reset safely
+        localStorage.removeItem("sessionId");
+        setMessages(INITIAL_MESSAGES);
+      }
+    }
+
+    restoreChatSession();
+  }, []);
 
   /**
    * Send message → Backend → Gemini → UI
