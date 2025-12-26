@@ -1,29 +1,48 @@
-import { useEffect, useRef, useState } from "react";
-import "./App.css";
+import { useState } from "react";
+import LandingPage from "./components/LandingPage";
+import ChatFAB from "./components/ChatFAB";
+import ChatWindow from "./components/ChatWindow";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
-export default function App() {
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const bottomRef = useRef(null);
+/**
+ * Unified message shape for UI
+ * role: "user" | "bot" | "agent" | "system"
+ */
+const INITIAL_MESSAGES = [
+  {
+    id: crypto.randomUUID(),
+    role: "bot",
+    content: "Hi 👋 How can I help you today?",
+  },
+];
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+function App() {
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [messages, setMessages] = useState(INITIAL_MESSAGES);
+  const [isTyping, setIsTyping] = useState(false);
 
-  async function sendMessage() {
-    if (!input.trim() || loading) return;
+  /**
+   * Send message → Backend → Gemini → UI
+   */
+  const handleSendMessage = async (text) => {
+    if (!text.trim() || isTyping) return;
 
-    const userMessage = { role: "user", content: input };
+    // 1️⃣ Add user message immediately
+    const userMessage = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: text,
+    };
+
     setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setLoading(true);
+    setIsTyping(true);
 
+    // 2️⃣ Prepare payload exactly as backend expects
     const storedSessionId = localStorage.getItem("sessionId");
+
     const payload = {
-      message: userMessage.content,
+      message: text,
       ...(storedSessionId ? { sessionId: storedSessionId } : {}),
     };
 
@@ -36,64 +55,64 @@ export default function App() {
 
       const data = await res.json();
 
-      // handle backend errors gracefully
       if (!res.ok) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content: data.reply || "Something went wrong. Please try again.",
-          },
-        ]);
-        return;
+        throw new Error(data.reply || "Server error");
       }
 
-      localStorage.setItem("sessionId", data.sessionId);
+      // 3️⃣ Persist session
+      if (data.sessionId) {
+        localStorage.setItem("sessionId", data.sessionId);
+      }
 
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: data.reply },
-      ]);
-    } catch (err) {
+      // 4️⃣ Add bot reply
+      const botMessage = {
+        id: crypto.randomUUID(),
+        role: "bot",
+        content: data.reply,
+      };
+
+      setMessages((prev) => [...prev, botMessage]);
+    } catch (error) {
+      // 5️⃣ System error message
       setMessages((prev) => [
         ...prev,
         {
-          role: "assistant",
+          id: crypto.randomUUID(),
+          role: "system",
           content:
-            "Our support system is temporarily unavailable. Please try again shortly.",
+            "⚠️ Our support system is temporarily unavailable. Please try again.",
         },
       ]);
     } finally {
-      setLoading(false);
+      setIsTyping(false);
     }
-  }
+  };
 
   return (
-    <div className="chat-container">
-      <div className="chat-header">
-        Spur Support <span>● Online</span>
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Landing Background */}
+      <div
+        className={`transition-all duration-300 ${
+          isChatOpen ? "blur-sm brightness-90" : ""
+        }`}
+      >
+        <LandingPage />
       </div>
 
-      <div className="chat-body">
-        {messages.map((m, i) => (
-          <div key={i} className={`message ${m.role}`}>
-            {m.content}
-          </div>
-        ))}
+      {/* Floating Chat Button */}
+      <ChatFAB onClick={() => setIsChatOpen(true)} disabled={isChatOpen} />
 
-        {loading && <div className="typing">Agent is typing...</div>}
-        <div ref={bottomRef} />
-      </div>
-
-      <div className="chat-input">
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-          placeholder="Type your message..."
+      {/* Chat Window */}
+      {isChatOpen && (
+        <ChatWindow
+          onClose={() => setIsChatOpen(false)}
+          messages={messages}
+          isTyping={isTyping}
+          onSendMessage={handleSendMessage}
         />
-        <button onClick={sendMessage}>Send</button>
-      </div>
+      )}
     </div>
   );
 }
+
+export default App;
