@@ -64,13 +64,10 @@ Each feature above maps directly to code in `backend/` and `frontend/`.
 
 ## Screenshots
 
-Add UI screenshots to `./assets/` and update these references after adding files:
 
-- ![Chat UI](./assets/chat-ui.png)
-- ![Mobile View](./assets/chat-mobile.png)
-
-Notes:
-- Place images in an `assets/` folder at the repository root.
+- Chat UI
+![alt text](./assets/image-1.png)
+![alt text](./assets/image.png)
 
 ---
 
@@ -79,7 +76,7 @@ Notes:
 Frontend
 - React 19 (`react`, `react-dom`)
 - Vite (`vite`, `@vitejs/plugin-react`)
-- JavaScript (JSX), plain CSS
+- JavaScript (JSX), Tailwind CSS
 - Scripts: `npm run dev`, `npm run build`
 
 Backend
