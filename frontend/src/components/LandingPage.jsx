@@ -20,7 +20,7 @@ export default function LandingPage() {
         {/* Primary CTA */}
         <div className="mt-50">
           <a
-            href="https://spur-assist.vercel.app/"
+            href="https://github.com/naman-ptdr/SpurAssist"
             target="_blank"
             rel="noopener noreferrer"
             className="
