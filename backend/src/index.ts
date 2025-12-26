@@ -9,14 +9,22 @@ const app = express();
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",                   // local Vite
-      "https://spur-assist.vercel.app", // Vercel frontend
-    ],
+    origin: (origin, callback) => {
+      if (
+        !origin ||
+        origin.includes("vercel.app") ||
+        origin === "http://localhost:5173"
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
   })
 );
+
 
 app.use(helmet());
 app.use(express.json());
